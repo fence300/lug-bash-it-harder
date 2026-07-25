@@ -22,12 +22,20 @@ cat_like_bins=(
   "$(find_cat_like_bin "bat")"
 )
 
-if (("${#cat_like_bins}" == 0)); then
+# Need to check to see if any of the values in cat_like_bins are "empty".
+# It turns out that if the find_cat_like_bin doesn't return anything, an
+# empty "" is still inserrted into the array.
+cat_bin=""
+for bin in "${cat_like_bins[@]}"; do
+  if [[ -n "$bin" ]]; then
+    cat_bin="$bin"
+  fi
+done
+
+if [[ ! -x "$cat_bin" ]]; then
   echo "Could not find suitable cat like program. What kind of system are you running?"
   exit 1
 fi
-
-cat_bin="${cat_like_bins[-1]}"
 
 echo
 "$cat_bin" "$file"
