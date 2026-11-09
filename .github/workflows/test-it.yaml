@@ -16,6 +16,8 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Test it
+        env: 
+          TEST_STR: ${{ github.repository_owner }} 
         run: | 
-          echo "Hello World"
+          echo "$TEST_STR"
 
