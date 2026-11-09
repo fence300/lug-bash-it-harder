@@ -75,21 +75,23 @@ max_integer() {
 
 prefix_name_with_script_count() {
   declare -a found_files
-  local files
-  files=$(find "$PWD" -mindepth 1 -maxdepth 1 -type f)
-
-  for file in $files; do
+  
+  while read file; do
     local file_name
     file_name=$(basename "$file")
 
     if [[ "$file_name" =~ ^[0-9]+ ]]; then
       found_files+=("${file_name:0:2}")
     fi
-  done
+  done <<< "$(find "$PWD" -mindepth 1 -maxdepth 1 -type f)"
 
-  local max
-  printf -v max "%02d" $(($(max_integer "${found_files[@]}") + 1))
-  echo "$max-$1"
+  if (( ${#found_files[@]} > 0 )); then
+    local max
+    printf -v max "%02d" $(($(max_integer "${found_files[@]}") + 1))
+    echo "$max-$1"
+  else
+    echo "01-$1"
+  fi 
 }
 
 if ((increment == 1)) && [[ -n "$number_prefix_override" ]]; then

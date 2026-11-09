@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "Associative arrays (sometimes called maps) are indexed on"
+echo "strings instead of numbers"
+
+echo "There is no implicit way to create an associative array"
+echo "they must always be declared"
+declare -A weapons=(
+    [Aragorn]="sword"
+    [Legolas]="bow"
+    [Gimli]="axe"
+)
+
+echo "Note: associative arrays are only supported in bash 4 or newer"
+echo "Mac computers ship with bash 3 so if you want associative"
+echo "arrays on a mac, you need to get it yourself"

@@ -1,0 +1,24 @@
+#!/bin/bash
+
+echo "create an array as before"
+fruits=(apple orange tomato)
+
+echo "notice the index numbers:"
+declare -p fruits
+
+echo "One of these things does not belong"
+echo "We can remove it by index number:"
+unset fruits[1]
+
+echo "Now all the fruits are red:"
+declare -p fruits
+
+echo "and if you append an element to the array"
+echo "it does not fill in the gap"
+fruits+=("cherry")
+declare -p fruits
+
+echo "but you can assign an element to the gap directly:"
+fruits[1]="bell pepper"
+declare -p fruits
+

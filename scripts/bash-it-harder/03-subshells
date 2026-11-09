@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo 'a $(subshell) is when you run a command inside another command'
+echo 'bash will wait for the inner command to complete and use the output'
+echo 'instead of listing files like this:'
+files="file1 file2 file3"
+echo "$files" | head -3
+
+echo 'we can set the value of the variable equal to the output of a command:'
+files=$(find "$PWD" -mindepth 1 -maxdepth 1 -type f)
+echo "$files" | head -3 

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+echo "you can use quotes so that elements can have spaces"
+for phrase in "darn it" "oh bother" "rebel scum"; do
+    echo "$phrase"
+done

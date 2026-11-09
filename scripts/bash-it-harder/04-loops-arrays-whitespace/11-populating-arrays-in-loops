@@ -1,0 +1,27 @@
+#!/bin/bash
+
+echo "First, don't do this:"
+declare -a lines=()
+cat data.txt | while read line; do
+    echo "Line: $line"
+    lines+=("$line")
+    echo "inside the loop: $(declare -p lines)"
+done
+echo
+echo "Because bash creates piped commands as a subprocess"
+echo "the modifications will not persist outside of the subprocess"
+declare -p lines
+echo 
+
+echo "keep the while-loop in the main process and feed STDIN"
+echo "from a file afterwards"
+while read line; do
+    lines+=("$line")
+done < data.txt
+declare -p lines
+
+echo "or feed it in straight from a subshell"
+declare -A files
+while read filename; do
+    files["$filename"]=$(cat "$filename")
+done <<< "$(find "$PWD" -mindepth 1 -maxdepth 1 -type f)

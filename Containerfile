@@ -4,6 +4,7 @@ FROM docker.io/library/debian:${DEBIAN_TAG} AS base
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# gather the latest version of the programs we want
 RUN apt-get -y update && \
     apt-get -y install \
         git \
@@ -20,6 +21,7 @@ RUN apt-get -y update && \
         ripgrep \
         fd-find \
         rsync \
+        iputils-ping \
         fzf \
         jq \
         bat \
@@ -27,6 +29,7 @@ RUN apt-get -y update && \
         vim \
         less \
         eza \
+        dialog \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -55,4 +58,4 @@ RUN ln -s /home/gnuplususer/lug/scripts/utilities/* /home/gnuplususer/.local/bin
 COPY --chown=gnuplususer:gnuplususer ./LICENSE ./lug/LICENSE
 COPY --chown=gnuplususer:gnuplususer ./Containerfile ./lug/Containerfile
 
-ENTRYPOINT bash
+ENTRYPOINT [ "bash" ]

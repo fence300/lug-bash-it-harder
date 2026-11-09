@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "Loops and arrays are really powerful together"
+echo "Here is the right way to do it:"
+
+domains=(
+    "google.com"
+    "netflix.com"
+    "gnu.ca"
+)
+
+for domain in "${domains[@]}"; do
+    echo -e "\e[92mPinging: $domain\e[0m"
+    ping -c 1 $domain
+    echo
+done
+
+echo "If you do it like this, the entire array"
+echo "will be read as one element and the loop will run once"
+for domain in "${domains[*]}"; do
+    echo "$domain"
+done
+
+echo "If you do it like this, you'll only see the value"
+echo "of the element at index 0"
+for domain in "$domains"; do
+    echo "$domain"
+done 
+

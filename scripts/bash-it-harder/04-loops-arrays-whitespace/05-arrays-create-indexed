@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "there are a few different ways to create an indexed aray"
+
+echo "implicitly:"
+fruits=(apple orange tomato)
+
+echo "explicitly:"
+declare -a vegetables=(carrot onion tomato)
+
+echo "new lines don't matter"
+declare -a statements=(
+    "I will take the ring to mordor"
+    "I do not know the way"
+)
+
+echo "bash assigns the a number"
+declare -p fruits vegetables statements

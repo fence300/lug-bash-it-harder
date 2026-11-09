@@ -1,0 +1,16 @@
+#!/bin/bash
+
+echo "This command 'which' will show us what program bash is executing"
+which which
+echo "This command 'command' will also show us the path of that program"
+command -v which
+echo "But 'which' does not know where command lives in the filesystem"
+which command
+echo "Because 'command' is not a separate program with it's own file"
+command -v command
+echo "It is a named behavior built into bash"
+
+# I once wrote a script that was executed on a container I did not
+# have permission to modify that did not have installed the program
+# `which` installed so I prefer and advise others to use bash builtin
+# commands wherever they will suffice

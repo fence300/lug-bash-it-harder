@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "Here's an associative array:"
+declare -A animal_sounds (
+    [dog]="bark"
+    [cat]="meow"
+    [fox]="????"
+)
+declare -p animal_sounds
+
+
+echo "You can change associative arrays in a similar way:"
+animal_sounds[cat]="hiss"
+declare -p animal_sounds
+
+echo "And you can unset them:"
+unset animal_sounds[fox]
+declare -p animal_sounds

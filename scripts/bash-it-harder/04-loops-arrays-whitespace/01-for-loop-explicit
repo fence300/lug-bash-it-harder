@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo "you can list the elements explicitly"
+for letter in a b c; do
+    echo "$letter"
+done 
+pause

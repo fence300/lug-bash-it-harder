@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "there are many commands that are actually builtins:"
+command -v read
+command -v for
+command -v while
+command -v declare
+
+echo "you can count on these being present in any bash environment"
+echo "but they are not necessarily supported by other shells"
+

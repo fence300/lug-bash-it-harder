@@ -1,0 +1,35 @@
+#!/bin/bash
+
+echo "You could also loop over the indexes"
+echo "and address each element inside the array"
+
+names=(
+    "sam"
+    "frodo"
+)
+
+for index in "${!names[@]}"; do
+    echo "---"
+    echo "index: $index"
+    echo "value: ${names[$index]}"
+done
+echo "---"
+echo
+
+echo "This is useful if you are storing multiple pieces of data"
+echo "that belong to the same item"
+addresses=(
+    "Number 3 Bagshot Row, Shire"
+    "Bag End, Shire"
+)
+
+for index in "${!names[@]}"; do
+    echo "---"
+    echo "Name: ${names[$index]}"
+    echo "Address: ${addresses[$index]}"
+done
+echo "---"
+echo
+
+echo "If you use this method, it is your responsibility to make sure"
+echo "the data is valid and populated for all indexes"

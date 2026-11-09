@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo "you can store your elements in a variable"
+letters="a b c"
+declare -p letters 
+
+echo "if you don't use quotes around the variable bash will separate"
+echo "the string into elements on every space inside it"
+for letter in $letters; do
+    echo "$letter"
+done 

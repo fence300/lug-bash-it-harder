@@ -1,0 +1,10 @@
+#!/bin/bash
+
+echo "if you do quote your variable then all of the spaces inside it"
+echo "will be taken as one element in the loop"
+
+letters="a b c"
+
+for letter in "$letters"; do
+    echo "$letter"
+done 
