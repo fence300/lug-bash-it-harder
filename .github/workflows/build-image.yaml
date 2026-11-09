@@ -19,7 +19,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v3
         with:
-          image: lug-bb
+          image: ${{ github.event.repository.name }}
           tags: latest
           containerfiles: |
             ./Containerfile
@@ -32,7 +32,7 @@ jobs:
         with:
           image: ${{ steps.build-image.outputs.image }}
           tags: ${{ steps.build-image.outputs.tags }}
-          registry: ghcr.io/taar
+          registry: ghcr.io/${{ github.repository_owner }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
