@@ -1,0 +1,21 @@
+name: Build & Push Images
+
+on: workflow_dispatch
+
+jobs:
+  build_images:
+    name: Build Images
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v7
+
+      - name: Test it
+        run: | 
+          echo "Hello World"
+
