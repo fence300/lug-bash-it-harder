@@ -19,7 +19,7 @@ jobs:
         id: build-image
         uses: redhat-actions/buildah-build@v3
         with:
-          image: lug-bb
+          image: ${{ github.event.repository.name }}
           tags: latest
           containerfiles: |
             ./Containerfile
