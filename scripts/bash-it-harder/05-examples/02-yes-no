@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# incorporate the definition of the previous function
+source ./01-ask
+
+function yes_no(){
+    # locally scope the answer
+    local yes_no_answer
+
+    # this will loop until the last command listed in the condition block
+    # returns exit status zero
+    until 
+        # ask the user a yes or no question and catch the answer in
+        # the locally scoped variable we set up
+        ask yes_no_answer "$* (Y|N)"
+
+        # silently check to see if user input begins with: Y, y, N, or n
+        grep -q -E '^[YyNn]' <<< "${yes_no_answer:0:1}}"
+
+        # if grep finds a match, it will return true and the loop will not run
+        # if grep does not find any matching lines, it will exit 1 and the body
+        # of the until-loop will execute
+    do
+        # scold the user
+        echo -e "\e[91mPlease answer Y or N \e[0m" >/dev/tty
+    done
+}

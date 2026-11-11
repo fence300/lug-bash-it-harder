@@ -1,0 +1,248 @@
+#!/bin/bash
+
+# name of the file to look for and save to
+save_file_name="save_vars.bash"
+
+# bring in the definitions of helper functions
+source ./01-ask
+source ./02-yes-no
+source ./04-append-array
+source ./06-dialog
+
+# load the save vars if the file exists
+# otherwise start fresh
+if [[ -s "$save_file_name" ]]; then
+    source "$save_file_name"
+else
+    # all of the variables named in this file start with user_*
+    declare -a user_id=()
+    declare -A user_fn=()
+    declare -A user_ln=()
+    declare -A user_email=()
+fi
+
+# function to save the users and managers arrays
+function save_users() {
+    declare -p ${!user_*} > "$save_file_name"
+}
+
+function dump_users() {
+    local this_user_id
+    for this_user_id in "${user_id[@]}"; do
+        echo -e "ID:\t\t${user_id[$this_user_id]}"
+        echo -e "First Name:\t${user_fn[$this_user_id]}"
+        echo -e "Last Name:\t${user_ln[$this_user_id]}"
+        echo -e "Email:\t\t${user_email[$this_user_id]}"
+        echo
+    done 
+}
+
+
+function add_user() {
+    local this_user_id
+    local this_user_fn
+    local this_user_ln
+    local this_user_email
+    local unsaved_data=false
+
+    while 
+        if $unsaved_data; then
+            echo -e "User Data: \e[91mUNSAVED CHANGES\e[0m"
+        else    
+            echo "User Data:"
+        fi
+        echo -e "ID:\t\t${this_user_id:-(unset)}"
+        echo -e "First Name:\t${this_user_fn:-(unset)}"
+        echo -e "Last Name:\t${this_user_ln:-(unset)}"
+        echo -e "Email:\t\t${this_user_email:-(unset)}"
+        echo 
+        echo "What would you like to change?"
+
+        options=(id first_name last_name email)
+        if [[ "$this_user_id" && "$this_user_fn" ]] && \
+           [[ "$this_user_ln" && "$this_user_email" ]]
+        then
+            options+=(save)
+        fi 
+        options+=(quit)
+
+        select choice in "${options[@]}"; do break; done
+    do 
+        case "$choice" in
+            (id)
+                ask this_user_id "ID:"
+                unsaved_data=true
+            ;;
+            (first_name) 
+                ask this_user_fn "First Name:" 
+                unsaved_data=true
+            ;;
+            (last_name) 
+                ask this_user_ln "Last Name:" 
+                unsaved_data=true
+            ;;
+            (email) 
+                ask this_user_email "Email:" 
+                unsaved_data=true
+            ;;
+            (save)
+                # only add the user to the array if they are not already there
+                local each found
+                found=false
+                for each in "${user_id[@]}"; do
+                    if [[ "$each" == "$this_user_id" ]]; then
+                        found=true
+                        break
+                    fi
+                done 
+                if ! $found; then
+                    user_id+=("$this_user_id")
+                fi 
+
+                # update the values that corespond to this user id
+                user_fn["$this_user_id"]="$this_user_fn"
+                user_ln["$this_user_id"]="$this_user_ln"
+                user_email["$this_user_id"]="$this_user_email"
+                unsaved_data=false
+            ;;
+
+            (quit) break ;;
+
+            (*) echo -e "\e[91mPlease choose a valid option\e[0m" ;;
+        esac
+    done 
+}
+
+function add_user_dialog() {
+    # handling temporary user data
+    local this_user_id
+    local this_user_fn
+    local this_user_ln
+    local this_user_email
+
+    # handling some states throughout the loop
+    local unsaved_data=false
+    local selected_option=false
+
+    # prevent these from escaping the scope
+    local each found choice text
+
+    while 
+
+        if $unsaved_data; then
+            text="User Data: \Z1UNSAVED CHANGES\Z0\n"
+        else    
+            text="User Data:\n"
+        fi
+        text+="ID:         ${this_user_id:-(unset)}\n"
+        text+="First Name: ${this_user_fn:-(unset)}\n"
+        text+="Last Name:  ${this_user_ln:-(unset)}\n"
+        text+="Email:      ${this_user_email:-(unset)}\n"
+        text+="\nWhat would you like to change?"
+
+        # rebuilding the menu options each loop so that we can
+        # change the defualt option and only allow the user to save
+        # if all fields are filled out
+        options=() 
+
+        # we have not yet selected a default option for this loop
+        # while rebuilding the menu options list - turn this true
+        # after the default option is added to the options list
+        selected_option=false 
+
+        if [[ "$this_user_id" ]]; then
+            options+=(-o id)
+        else
+            options+=(-s id)
+            selected_option=true
+        fi 
+
+        if [[ "$this_user_fn" ]]; then
+            options+=(-o first_name)
+        else
+            if $selected_option ; then
+                options+=(-o first_name)
+            else
+                options+=(-s first_name)
+                selected_option=true
+            fi
+        fi
+
+        if [[ "$this_user_ln" ]]; then
+            options+=(-o last_name)
+        else
+            if $selected_option ; then
+                options+=(-o last_name)
+            else
+                options+=(-s last_name)
+                selected_option=true
+            fi
+        fi
+
+        if [[ "$this_user_email" ]]; then
+            options+=(-o email)
+        else 
+            if $selected_option ; then
+                options+=(-o email)
+            else
+                options+=(-s email)
+                selected_option=true
+            fi
+        fi
+
+        # if all of these fields are complete then we can
+        # allow the user to save and quit
+        if [[ "$this_user_id" && "$this_user_fn" ]] && \
+           [[ "$this_user_ln" && "$this_user_email" ]]
+        then
+            options+=(-s save)
+        fi 
+
+        options+=(-o quit)
+
+        choice=$(dialog_menu -t "$text" "${options[@]}")
+    do 
+        case "$choice" in
+            (id)
+                this_user_id=$( dialog_input -t "ID:" -d "$this_user_id" )
+                unsaved_data=true
+            ;;
+            (first_name) 
+                this_user_fn=$(dialog_input -t "First Name:" -d "$this_user_fn")
+                unsaved_data=true
+            ;;
+            (last_name) 
+                this_user_ln=$(dialog_input -t "Last Name:" -d "$this_user_ln")
+                
+                unsaved_data=true
+            ;;
+            (email) 
+                this_user_email=$(dialog_input -t "Email:" -d "$this_user_email")
+                unsaved_data=true
+            ;;
+            (save)
+                # only add the user to the array if they are not already there
+                found=false
+                for each in "${user_id[@]}"; do
+                    if [[ "$each" == "$this_user_id" ]]; then
+                        found=true
+                        break
+                    fi
+                done 
+                if ! $found; then
+                    user_id+=("$this_user_id")
+                fi 
+
+                # update the values that corespond to this user id
+                user_fn["$this_user_id"]="$this_user_fn"
+                user_ln["$this_user_id"]="$this_user_ln"
+                user_email["$this_user_id"]="$this_user_email"
+                unsaved_data=false
+            ;;
+
+            (quit) break ;;
+
+            (*) echo -e "\e[91mPlease choose a valid option\e[0m" ;;
+        esac
+    done 
+}

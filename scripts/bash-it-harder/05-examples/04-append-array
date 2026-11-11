@@ -1,0 +1,97 @@
+#!/bin/bash
+
+function append_array() {
+    # preload a default value for delimeter
+    local delim=":"
+
+    # loop as long as the argument string still has values
+    while [[ "$*" ]]; do
+
+        # check each argument for expected flags
+        # store each second arg as apropriate
+        # then throw away both
+        if [[ "$1" == "--array" || "$1" == "-a" ]]; then
+            local -n name_ref_arr="$2"
+            shift 2
+        elif [[ "$1" == "--key" || "$1" == "-k" ]]; then
+            local key="$2"
+            shift 2
+        elif [[ "$1" == "--delim" || "$1" == "-d" ]]; then
+            local delim="$2"
+            shift 2
+        elif [[ "$1" == "--val" || "$1" == "-v" ]]; then
+            local val="$2"
+            shift 2
+        
+        else
+            # if you made it here then the first arg is not one of the expected
+            # flags - go ahead and throw it away
+            shift
+        fi
+    done
+
+    # now test to make sure the values are valid
+
+    # create a temp variable false
+    # kick it to true if we find any errors
+    # this will let us run each test instead of stopping after the first error
+    local errors_found=false
+
+    if [[ -z "$key" ]]; then
+        echo "--key must be provided"
+        errors_found=true
+    fi
+
+    if [[ -z "$val" ]]; then
+        echo "--val must be provided"
+        errors_found=true
+    fi
+
+    if [[ -z "${!name_ref_arr}" ]]; then
+        echo "--array must be provided"
+        errors_found=true
+    else
+
+        if [[ ! -v "${!name_ref_arr}" ]]; then
+            echo "--array must name an array"
+            errors_found=true
+        else
+
+            # figure out what kind of variable the named ref is
+            local declare_string=$(declare -p "${!name_ref_arr}")
+
+            # assume it is not an array
+            local array_is_array=false
+
+            # check if it is a numeric array and set to true
+            if grep -qE '^declare -a' <<< "$declare_string"; then
+                array_is_array=true
+            fi
+
+            # check if it is an associative array and set to true
+            if grep -qE '^declare -A' <<< "$declare_string"; then
+                array_is_array=true
+            fi
+
+            # lastly check if it is not an array
+            if ! $array_is_array; then
+                echo "--array must provide the name of an array - this is something else"
+                errors_found=true 
+            fi
+        fi
+    fi
+
+    # stop here if we found any errors
+    if $errors_found; then 
+        return 1
+    fi 
+
+    # check if this key is already in the array
+    if [[ "${name_ref_arr[$key]}" ]]; then
+        # if so, append the value separated by delim
+        name_ref_arr["$key"]="${name_ref_arr[$key]}$delim$val"
+    else
+        # if not, go ahead and set it
+        name_ref_arr["$key"]="$val"
+    fi
+}

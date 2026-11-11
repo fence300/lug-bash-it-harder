@@ -1,0 +1,17 @@
+#!/bin/bash
+
+function ask() {
+    # name ref means this variable actually changes the value of the variable
+    # named in the first arg
+    local -n name_ref_answer="$1"
+
+    # throw away the first argument
+    shift
+
+    # output the rest of the args as a yellow string to the tty
+    # this will prevent it from being captured by any subhsells or redirection
+    echo -e "\e[93m$*\e[0m" >/dev/tty
+
+    # catch user input in the named variable
+    read -r name_ref_answer
+}

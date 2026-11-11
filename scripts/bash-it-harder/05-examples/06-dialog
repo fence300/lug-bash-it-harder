@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# this will let us run dialog in a subshell
+# stderr directed to stdout so we can catch choices in a variable
+# stdout directed to tty so we can see it
+# order matters - get it backwards and choices get directed to tty
+function dialog_wrapper() {
+    dialog --colors "$@" 2>&1 >/dev/tty
+}
+
+function dialog_menu_add_option() {
+    local option="$1"
+    local -n name_ref_options="$2"
+
+    # skip adding duplicates
+    local found=false
+    local each
+    for each in "${name_ref_options[@]}"; do
+        if [[ "$each" == "$option" ]]; then
+            found=true
+            break
+        fi
+    done
+
+    if ! $found; then 
+        name_ref_options+=("$option")
+    fi
+}
+
+function dialog_menu() {
+    local text="default text"
+    local selected=""
+    local -a options=()
+
+    while (( $# )); do
+        case "$1" in
+            # set the text that will be displayed
+            (-t) text="$2"; shift 2 ;;
+            (--text=*) text="${1#--text=}"; shift ;;
+
+            (-o) 
+                dialog_menu_add_option "$2" options 
+                shift 2 
+            ;;
+            (--option=*) 
+                dialog_menu_add_option "${1#--option=}" options 
+                shift 
+            ;;
+            
+            (-s) 
+                selected="$2"     
+                dialog_menu_add_option "$2" options
+                shift 2 
+            ;;
+
+            (--selected=*) 
+                selected="${$1#--selected=}"
+                dialog_menu_add_option "${1#--selected=}" options
+                shift
+            ;;
+
+            # throw away anything unrecognized
+            (*) shift ;;
+        esac
+    done
+
+    local option
+    local -a options_array=()
+
+    for option in "${options[@]}"; do
+        if [[ -n "$selected" && "$option" == "$selected" ]]; then
+            options_array+=("$option" "on")
+        else
+            options_array+=("$option" "off")
+        fi
+    done 
+
+    if (( ${#options_array[@]} <= 0 )); then
+        return 1
+    fi
+
+    dialog_wrapper --no-items --radiolist "$text" 0 0 0 "${options_array[@]}"
+
+}
+
+
+function dialog_input() {
+    local text default
+
+    while (( $# )); do
+        case "$1" in
+            (-t) text="$2"; shift 2 ;;
+            (--text=*) text="${1#--text=}"; shift ;;
+            (-d) default="$2"; shift 2 ;;
+            (--default=*) default="${1#--default=}"; shift ;;
+            (*) shift ;;
+        esac
+    done 
+
+    dialog_wrapper --inputbox "$text" 0 0 "$default"
+}

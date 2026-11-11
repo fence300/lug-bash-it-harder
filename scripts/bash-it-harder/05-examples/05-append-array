@@ -1,0 +1,84 @@
+#!/bin/bash
+
+
+function append_array() {
+    # necessary to source this definition and run in an interactive shell
+    local OPTIND 
+
+    # preload a default value for delimeter
+    local delim=":"
+
+    # I like this method less because I don't fully understand
+    # how getopts tracks the position through OPTIND so I don't
+    # now how to make it throw away unrecognized args
+    while getopts ":a:k:d:v:" opt; do
+        case "$opt" in
+            (a) local -n name_ref_arr="$OPTARG" ;;
+            (k) local key="$OPTARG" ;;
+            (d) local delim="$OPTARG" ;;
+            (v) local val="$OPTARG" ;;
+        esac
+    done
+
+    # now test to make sure the values are valid
+
+    local errors_found=false
+
+    if [[ -z "$key" ]]; then
+        echo "-k must provide the array key"
+        errors_found=true
+    fi
+
+    if [[ -z "$val" ]]; then
+        echo "-v must provide a value to add"
+        errors_found=true
+    fi
+
+    if [[ ! -v name_ref_arr || -z "${!name_ref_arr}" ]]; then
+        echo "-a must provide the name of an array"
+        errors_found=true
+    else
+
+        if [[ ! -v "${!name_ref_arr}" ]]; then
+            echo "-a must provide the name of an array"
+            errors_found=true
+        else
+
+            # figure out what kind of variable the named ref is
+            local declare_string=$(declare -p "${!name_ref_arr}")
+
+            # assume it is not an array
+            local array_is_array=false
+
+            # check if it is a numeric array and set to true
+            if grep -qE '^declare -a' <<< "$declare_string"; then
+                array_is_array=true
+            fi
+
+            # check if it is an associative array and set to true
+            if grep -qE '^declare -A' <<< "$declare_string"; then
+                array_is_array=true
+            fi
+
+            # lastly check if it is not an array
+            if ! $array_is_array; then
+                echo "-a must provide the name of an array"
+                errors_found=true 
+            fi
+        fi
+    fi
+
+    # stop here if we found any errors
+    if $errors_found; then 
+        return 1
+    fi 
+
+    # check if this key is already in the array
+    if [[ "${name_ref_arr[$key]}" ]]; then
+        # if so, append the value separated by delim
+        name_ref_arr["$key"]="${name_ref_arr[$key]}$delim$val"
+    else
+        # if not, go ahead and set it
+        name_ref_arr["$key"]="$val"
+    fi
+}

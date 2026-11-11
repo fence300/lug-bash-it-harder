@@ -1,0 +1,22 @@
+#!/bin/bash
+
+function append_array() {
+    # name reference to the array that we want to operate on
+    local -n array="$1"
+
+    # key to look for
+    local key="$2"
+
+    # delimeter value
+    local delim="$3"
+
+    # value to append
+    local val="$4"
+
+    # check if the array is already populated at that key
+    if [[ "${array[$key]}" ]]; then
+        array["$key"]="${array[$key]}$delim$val"
+    else
+        array["$key"]="$val"
+    fi
+}
