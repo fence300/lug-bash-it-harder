@@ -16,13 +16,13 @@ url="https://${domain}${location}?${query_params}"
 # we could just go and get it but this will generate a lot of output
 # and it will be difficult to read
 function do_curl() {
-    curl "$url"
+    curl "$url" | less
 }
 
 # we can pipe it into another program for parsing json data which will
 # make it a little easier to read
 function do_curl_jq() {
-    curl "$url" | jq
+    curl "$url" | jq | less -R
 }
 
 # and I do that often when I am working interactively to inspect the

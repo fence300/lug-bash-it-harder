@@ -1,15 +1,9 @@
 #!/bin/bash
 
 # this is the string we will use to store a changing json data structure
-data='[]'
+data='[{"d":"example.com","o":"me"},{"d":"another.com","o":"you"},{"d":"third.com","o":"her"}]'
 
-report_data() {
-    local count=$(echo "$data" | jq 'length')
-    echo -e "\e[94mCount:\e[0m $count"
-    if (( count )); then
-        echo "$data" | jq -c '.[]'
-    fi
-}
+function get_count() { echo "$data" | jq 'length';}
 
 # very quickly reusing these from before
 function ask() {
@@ -17,21 +11,11 @@ function ask() {
     echo -e "\e[93m$*\e[0m" >/dev/tty
     read -r name_ref_answer
 }
-function yes_no(){
-    local yes_no_answer
-    until 
-        ask yes_no_answer "$* (Y|N)"
-        grep -q -E '^[YyNn]' <<< "${yes_no_answer:0:1}}"
-    do
-        echo -e "\e[91mPlease answer Y or N \e[0m" >/dev/tty
-    done
-    grep -q -E '^[Yy]' <<< "${yes_no_answer:0:1}}"
-}
 
-while
-    report_data
-    yes_no "Would you like to add data?"
-do
+add_entry() {
+    local domain
+    local owner
+
     ask domain "Domain: "
     ask owner "Owner: "
 
@@ -40,4 +24,134 @@ do
         --arg own "$owner" \
         '. += [{d:$dom, o:$own}]'
     )
-done 
+}
+
+list_entries() { 
+    local each_data domain owner
+    {
+        while read each_data; do
+            domain=$(echo "$each_data" | jq -r '.d')
+            owner=$(echo "$each_data" | jq -r '.o')
+            echo "Domain: $domain - Owner: $owner"
+        done <<< "$(echo "$data" | jq -c '.[]')"
+    } | less 
+}
+
+select_entry() {
+    local -A map=()
+    local -a options=()
+    local each_data domain owner string choice
+
+    # loop over the json object of each entry
+    while read each_data; do
+
+        # extrct the information
+        domain=$(echo "$each_data" | jq -r '.d')
+        owner=$(echo "$each_data" | jq -r '.o')
+
+        # compose it into a human readable string
+        string="Domain: $domain - Owner: $owner"
+
+        # store it in the numeric array so that order is preserved
+        options+=("$string")
+
+        # store it in the associative array so we can look up the data object
+        map["$string"]="$each_data"
+
+    done <<< "$(echo "$data" | jq -c '.[]')"
+
+    select choice in "${options[@]}"; do break; done
+    
+    if [[ "$choice" ]]; then
+        echo "${map[$choice]}"
+    else
+        return 1
+    fi 
+}
+
+validate_tempfile() {
+    local tempfile="$1"
+
+    # must exist and have content
+    if [[ ! -s "$tempfile" ]]; then
+        echo -e "\e[91mHow did you manage to delete the temp file?\e[0m"
+        return 1
+    fi
+
+    # must be able to extract a list of keys
+    if ! cat "$tempfile" | jq -c 'keys' > /dev/null; then
+        echo -e "\e[91mUnable to extract a list of keys from the entry\e[0m"
+        return 1 
+    fi
+
+    # object must have exactly this list of keys
+    local keys=$(cat "$tempfile" | jq -c 'keys')
+    if [[ ! "$keys" == '["d","o"]' ]]; then
+        echo -e '\e[91mObject must have exactly these keys: ["d","o"]\e[0m'
+        echo "yours provided: $keys" 
+        return 1
+    fi
+
+    # made it past all the safety checks
+    return 0
+}
+
+edit_entry() {
+    local entry
+
+    echo -e "\e[93mSelect an entry to edit:\e[0m"
+    if ! entry=$(select_entry); then
+        return
+    fi
+
+    local tempfile=$(mktemp)    
+    until 
+        echo "$entry" > "$tempfile"    
+        vim "$tempfile"
+        validate_tempfile "$tempfile"
+    do
+        # pause to read validation message and then throw them back into vim
+        echo -e "\e93mPress Enter to Continue\e[0m"
+        read
+    done
+    new_entry=$(cat "$tempfile" | jq -c )
+    rm "$tempfile"
+
+    data=$( echo $data | jq \
+        --argjson old "$entry" \
+        --argjson new "$new_entry" \
+        'map( if . == $old then $new else . end )'
+    )
+}
+
+delete_entry() {
+    echo -e "\e[93mSelect an entry to delete:\e[0m"
+    if ! entry=$(select_entry); then
+        return
+    fi
+    data=$(echo $data | jq --argjson old "$entry" 'map(select(. != $old))')
+}
+
+function manage_data() {
+    local -a options
+    local choice count 
+    while
+        echo -e "\e[93mWhat would you like to do?\e[0m"
+        options=(add)
+        
+        count=$(get_count)
+        if (( count > 0 )); then
+            options+=(list edit delete )
+        fi
+        options+=(quit)
+        select choice in "${options[@]}"; do break; done
+    do
+        case "$choice" in 
+            (add) add_entry ;;
+            (list) list_entries ;;
+            (edit) edit_entry ;;
+            (delete) delete_entry ;;
+            (quit) break ;;
+        esac 
+    done 
+}
