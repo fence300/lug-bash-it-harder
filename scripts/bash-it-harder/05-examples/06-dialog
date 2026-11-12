@@ -79,7 +79,7 @@ function dialog_menu() {
         return 1
     fi
 
-    dialog_wrapper --no-items --radiolist "$text" 0 0 0 "${options_array[@]}"
+    dialog_wrapper --cancel-label "Quit" --no-items --radiolist "$text" 0 0 0 "${options_array[@]}"
 
 }
 

@@ -1,0 +1,99 @@
+#!/bin/bash
+
+pause() {
+    echo -e "\e[93mPress Enter to Continue\e[0m"
+    read
+}
+
+# basic information - just so it's easier to read
+domain="science.nasa.gov"
+location="/wp-json/wp/v2/apod-basic/"
+query_params="api_key=DEMO_KEY"
+
+# build the url we want to query
+url="https://${domain}${location}?${query_params}"
+
+# we could just go and get it but this will generate a lot of output
+# and it will be difficult to read
+function do_curl() {
+    curl "$url"
+}
+
+# we can pipe it into another program for parsing json data which will
+# make it a little easier to read
+function do_curl_jq() {
+    curl "$url" | jq
+}
+
+# and I do that often when I am working interactively to inspect the
+# results of an API that I'm not familiar with - but when I am writing
+# a real script that needs to work on it's own I'll do this:
+function do_curl_better() {
+
+    # if a variable is not being used as a global interface to access
+    # data between functions, you should restrict it to the local scope
+    # and if you want to be extra careful, give it a long unique name
+    # that says exactly what it is for
+    local curl_results
+    local first_result
+    local transformed_list
+
+    # if-then using an (!) inverted exit status will only run
+    # when the command returns a non-zero exit status to
+    # indicate there was a problem
+
+    # at the same time, we can put the command in a subshell
+    # and have if-then use the exit status of the subshell
+    # and catch the output on stdout in a variable
+
+    # make sure curl worked and catch the results
+    if ! curl_results=$(curl -s "$url"); then
+        echo "Could not reach the API"
+        return 1
+    fi
+
+    # make sure we were able to parse the results as json data
+    if ! echo "$curl_results" | jq >/dev/null; then
+        echo "Could not parse results as json data"
+        return 1
+    fi
+
+    # we can use jq's `type` function to check the type of the json
+    # object we received - from this API, I know I am expecting an array
+    local curl_results_type=$(echo "$curl_results" | jq -r '. | type')
+    if [[ ! "$curl_results_type" == "array" ]]; then
+        echo "Results are not an array as expected"
+        return 1
+    fi
+
+    # we could separate out the first result
+    if ! first_result=$(echo "$curl_results" | jq '.[0]'); then
+        echo "Could not access first result in a list"
+        return 1
+    fi
+
+    
+    echo "First result is of type: $(echo "$first_result" | jq -r '.|type')"
+    pause
+
+    echo "First result has keys:"
+    echo "$first_result" | jq -r '.|keys[]'
+    pause
+
+    # if you are sure that the json object is a list
+    # and you know the keys are present in every object,
+    # then we could apply a transformation to each item on the list 
+    # and grab only a few keys
+    if ! transformed_list=$(echo "$curl_results" | jq 'map({title,alt})'); then
+        echo "Unable to transform curl results"
+        return 1
+    fi
+
+    echo "Here is the transformed list.  It is much less daunting to look at:"
+    echo "$transformed_list" | jq 
+    pause
+
+}
+
+
+

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# this is the string we will use to store a changing json data structure
+data='[]'
+
+report_data() {
+    local count=$(echo "$data" | jq 'length')
+    echo -e "\e[94mCount:\e[0m $count"
+    if (( count )); then
+        echo "$data" | jq -c '.[]'
+    fi
+}
+
+
+
+
+
+# very quickly reusing these from before
+function ask() {
+    local -n name_ref_answer="$1"; shift
+    echo -e "\e[93m$*\e[0m" >/dev/tty
+    read -r name_ref_answer
+}
+function yes_no(){
+    local yes_no_answer
+    until 
+        ask yes_no_answer "$* (Y|N)"
+        grep -q -E '^[YyNn]' <<< "${yes_no_answer:0:1}}"
+    do
+        echo -e "\e[91mPlease answer Y or N \e[0m" >/dev/tty
+    done
+    grep -q -E '^[Yy]' <<< "${yes_no_answer:0:1}}"
+}
+
+while
+    report_data
+    yes_no "Would you like to add data?"
+do
+    ask domain "Domain: "
+    ask owner "Owner: "
+
+    data=$(echo "$data" | jq \
+        --arg dom "$domain" \
+        --arg own "$owner" \
+        '. += [{d:$dom, o:$own}]'
+    )
+done 

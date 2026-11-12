@@ -24,4 +24,7 @@ function yes_no(){
         # scold the user
         echo -e "\e[91mPlease answer Y or N \e[0m" >/dev/tty
     done
+
+    grep -q -E '^[Yy]' <<< "${yes_no_answer:0:1}}"
+
 }

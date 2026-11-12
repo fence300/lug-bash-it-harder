@@ -26,17 +26,24 @@ function save_users() {
     declare -p ${!user_*} > "$save_file_name"
 }
 
-function dump_users() {
-    local this_user_id
-    for this_user_id in "${user_id[@]}"; do
-        echo -e "ID:\t\t${user_id[$this_user_id]}"
-        echo -e "First Name:\t${user_fn[$this_user_id]}"
-        echo -e "Last Name:\t${user_ln[$this_user_id]}"
-        echo -e "Email:\t\t${user_email[$this_user_id]}"
-        echo
-    done 
+function report_user() {
+    local this_user_id="$1"
+    echo -e "ID:\t\t$this_user_id"
+    echo -e "First Name:\t${user_fn[$this_user_id]}"
+    echo -e "Last Name:\t${user_ln[$this_user_id]}"
+    echo -e "Email:\t\t${user_email[$this_user_id]}"
 }
 
+function list_users() {
+    local this_user_id
+    {
+        echo -----
+        for this_user_id in "${user_id[@]}"; do
+            report_user "$this_user_id"
+            echo -----
+        done 
+    } | less
+}
 
 function add_user() {
     local this_user_id
@@ -44,6 +51,9 @@ function add_user() {
     local this_user_ln
     local this_user_email
     local unsaved_data=false
+
+
+    local options choice
 
     while 
         if $unsaved_data; then
@@ -126,6 +136,7 @@ function add_user_dialog() {
 
     # prevent these from escaping the scope
     local each found choice text
+    local -a options=()
 
     while 
 
@@ -196,9 +207,7 @@ function add_user_dialog() {
            [[ "$this_user_ln" && "$this_user_email" ]]
         then
             options+=(-s save)
-        fi 
-
-        options+=(-o quit)
+        fi
 
         choice=$(dialog_menu -t "$text" "${options[@]}")
     do 
@@ -240,9 +249,84 @@ function add_user_dialog() {
                 unsaved_data=false
             ;;
 
-            (quit) break ;;
-
             (*) echo -e "\e[91mPlease choose a valid option\e[0m" ;;
         esac
     done 
+}
+
+function delete_user() {
+    # locally scope these variables so they don't don't collide with
+    # anything going on in other functions - because I like to use "text"
+    # and "options" a lot and I build menus within menus
+    local text="Which user would you like to delete?"
+    local -a options
+    local each choice
+    while 
+        options=()
+        for each in "${user_id[@]}"; do
+            options+=(-o "$each")
+        done
+
+        choice=$(dialog_menu -t "$text" "${options[@]}")
+    do
+        # IMPORTANT - the ! means this loop will iterate over the
+        # numeric indexes of the array user_id, and we do it this way 
+        # instead of a C-style loop counting from zero to ${#user_id[@]}
+        # because this will skip the gaps we are about to create by
+        # by deleting users
+        for each in "${!user_id[@]}"; do
+
+            # check if the id we chose for deletion matches the value 
+            # of the user_id array at this index
+            if [[ "$choice" == "${user_id[$each]}" ]]; then
+
+                # unset the user_id at this numeric index
+                unset user_id[$each]
+
+                # unset the other arrays using the chosen name as the key
+
+                # it does not cause an error to unset associative arrays
+                # at an index that does not exist, but I like to put it here
+                # anyway to skip that unnecessary work if it doesn't exist
+                unset user_fn["$choice"]
+                unset user_ln["$choice"]
+                unset user_email["$choice"]
+
+                # because the function which adds users to the data structure
+                # prevents duplicate entries, we can be sure that the first one
+                # found is the only one found and it is safe to stop searching
+                # looping over the rest of the user_id array
+                break
+            fi
+        done 
+    done 
+}
+
+function manage_users() {
+    local text="What would you like to do?"
+    local -a options=(
+        -o add_user
+        -o list_users
+        -o delete_user
+        -o save
+    )
+    local choice
+    while
+        choice=$(dialog_menu -t "what would you like to do?" "${options[@]}" )
+    do
+        case "$choice" in
+            (add_user) add_user_dialog ;;
+            (list_users) list_users ;;
+            (delete_user) delete_user;;
+            (save) save_users ;;
+            # you'll never see this one under normal operation
+            # but I do it as a sort of placeholder when I'm building
+            # the functions in case I add an option to the menu and
+            # forget to add the coresponding logic
+            (*)
+                echo "unrecognized option: $choice"
+                sleep 3
+            ;;
+        esac
+    done
 }

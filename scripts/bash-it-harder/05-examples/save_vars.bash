@@ -1,0 +1,5 @@
+declare -A user_email=([jsmith]="jsmith@domain.tld" [jdoe]="jdoe@domain.tld" )
+declare -A user_fn=([jsmith]="john" [jdoe]="John" )
+declare -a user_id=([0]="jdoe" [1]="jsmith")
+declare -A user_ln=([jsmith]="smith" [jdoe]="Doe" )
+declare -A user_projects=()
