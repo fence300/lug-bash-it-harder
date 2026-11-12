@@ -11,10 +11,6 @@ report_data() {
     fi
 }
 
-
-
-
-
 # very quickly reusing these from before
 function ask() {
     local -n name_ref_answer="$1"; shift
