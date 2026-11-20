@@ -13,6 +13,7 @@ RUN apt-get -y update && \
         man-db \
         shellcheck \
         curl \
+        wget \
         locales \
         python3 \
         pip \

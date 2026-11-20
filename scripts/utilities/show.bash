@@ -24,7 +24,7 @@ cat_like_bins=(
 
 # Need to check to see if any of the values in cat_like_bins are "empty".
 # It turns out that if the find_cat_like_bin doesn't return anything, an
-# empty "" is still inserrted into the array.
+# empty "" is still inserted into the array.
 cat_bin=""
 for bin in "${cat_like_bins[@]}"; do
   if [[ -n "$bin" ]]; then
